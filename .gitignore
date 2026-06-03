@@ -1,0 +1,138 @@
+# =========================
+# FLUTTER / DART
+# =========================
+
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Archivos generados por Flutter
+app_flutter/.dart_tool/
+app_flutter/build/
+app_flutter/.flutter-plugins
+app_flutter/.flutter-plugins-dependencies
+app_flutter/.packages
+
+# Mantener pubspec.lock en aplicaciones Flutter
+# pubspec.lock
+
+
+# =========================
+# FLUTTER DESKTOP - WINDOWS
+# =========================
+
+app_flutter/windows/flutter/ephemeral/
+app_flutter/windows/flutter/generated_plugins.cmake
+app_flutter/windows/flutter/generated_plugin_registrant.cc
+app_flutter/windows/flutter/generated_plugin_registrant.h
+app_flutter/build/windows/
+
+
+# =========================
+# FLUTTER DESKTOP - LINUX
+# =========================
+
+app_flutter/linux/flutter/ephemeral/
+app_flutter/linux/flutter/generated_plugins.cmake
+app_flutter/linux/flutter/generated_plugin_registrant.cc
+app_flutter/linux/flutter/generated_plugin_registrant.h
+app_flutter/build/linux/
+
+
+# =========================
+# FLUTTER DESKTOP - MACOS
+# =========================
+
+app_flutter/macos/Flutter/ephemeral/
+app_flutter/macos/Flutter/GeneratedPluginRegistrant.swift
+app_flutter/macos/Pods/
+app_flutter/build/macos/
+
+
+# =========================
+# ANDROID OPCIONAL
+# =========================
+
+app_flutter/android/.gradle/
+app_flutter/android/app/build/
+app_flutter/android/build/
+app_flutter/android/local.properties
+
+
+# =========================
+# WEB OPCIONAL
+# =========================
+
+app_flutter/build/web/
+
+
+# =========================
+# BACKEND / XAMPP / PHP
+# =========================
+
+backend/.env
+.env
+
+backend/config/database.php
+backend/config/config.php
+
+backend/logs/
+logs/
+
+tmp/
+temp/
+cache/
+
+
+# =========================
+# BASE DE DATOS
+# =========================
+
+*.sql.gz
+*.zip
+*.rar
+*.7z
+
+# Sí puedes subir:
+# database/canchas_db.sql
+# database/seed_data.sql
+
+
+# =========================
+# VISUAL STUDIO CODE
+# =========================
+
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+
+
+# =========================
+# SISTEMA OPERATIVO
+# =========================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+
+# =========================
+# ARCHIVOS TEMPORALES
+# =========================
+
+*.log
+*.tmp
+*.bak
+*.backup
+*.swp
