@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/clientes/registrar_cliente_screen.dart';
+import 'screens/menu_principal.dart';
 
 void main() {
   runApp(const GestionCanchasApp());
@@ -16,7 +16,7 @@ class GestionCanchasApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const RegistrarClienteScreen(),
+      home: const MenuPrincipal(),
     );
   }
 }
