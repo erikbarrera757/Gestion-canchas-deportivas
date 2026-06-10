@@ -49,20 +49,52 @@ class ListarClientesScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EditarClienteScreen(cliente: cliente),
+                        ),
+                      );
+                    },
                   ),
                   IconButton(
-  icon: const Icon(Icons.edit),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            EditarClienteScreen(cliente: cliente),
-      ),
-    );
-  },
-),
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Eliminar Cliente"),
+                          content: Text(
+                            "¿Desea eliminar a ${cliente.nombre} ${cliente.apellido}?",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Cancelar"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "${cliente.nombre} eliminado correctamente",
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text("Eliminar"),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
