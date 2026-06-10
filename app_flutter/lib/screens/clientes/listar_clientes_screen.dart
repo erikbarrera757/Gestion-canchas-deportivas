@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/cliente.dart';
+import 'editar_cliente_screen.dart';
 
 class ListarClientesScreen extends StatelessWidget {
   const ListarClientesScreen({super.key});
@@ -51,9 +52,17 @@ class ListarClientesScreen extends StatelessWidget {
                     onPressed: () {},
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {},
-                  ),
+  icon: const Icon(Icons.edit),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            EditarClienteScreen(cliente: cliente),
+      ),
+    );
+  },
+),
                 ],
               ),
             ),
