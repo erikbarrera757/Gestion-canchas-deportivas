@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/cliente.dart';
 import 'editar_cliente_screen.dart';
+import 'historial_cliente_screen.dart';
 
 class ListarClientesScreen extends StatelessWidget {
   const ListarClientesScreen({super.key});
@@ -47,6 +48,18 @@ class ListarClientesScreen extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                    IconButton(
+  icon: const Icon(Icons.history),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            HistorialClienteScreen(cliente: cliente),
+      ),
+    );
+  },
+),
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
