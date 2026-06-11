@@ -64,12 +64,23 @@ class _EditarClienteScreenState
   }
 
   void guardarCambios() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Cliente actualizado correctamente"),
+  widget.cliente.nombre = nombreController.text;
+  widget.cliente.apellido = apellidoController.text;
+  widget.cliente.ci = ciController.text;
+  widget.cliente.telefono = telefonoController.text;
+  widget.cliente.correo = correoController.text;
+  widget.cliente.direccion = direccionController.text;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        "Cliente actualizado correctamente",
       ),
-    );
-  }
+    ),
+  );
+
+  Navigator.pop(context);
+}
 
   @override
   Widget build(BuildContext context) {

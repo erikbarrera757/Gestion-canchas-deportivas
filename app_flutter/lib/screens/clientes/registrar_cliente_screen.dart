@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../models/cliente.dart';
+import '../../data/clientes_data.dart';
 class RegistrarClienteScreen extends StatefulWidget {
   const RegistrarClienteScreen({super.key});
 
@@ -19,12 +20,25 @@ class _RegistrarClienteScreenState
   final direccionController = TextEditingController();
 
   void guardarCliente() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Cliente registrado correctamente"),
-      ),
-    );
-  }
+  final nuevoCliente = Cliente(
+    nombre: nombreController.text,
+    apellido: apellidoController.text,
+    ci: ciController.text,
+    telefono: telefonoController.text,
+    correo: correoController.text,
+    direccion: direccionController.text,
+  );
+
+  clientes.add(nuevoCliente);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Cliente registrado correctamente"),
+    ),
+  );
+
+  Navigator.pop(context);
+}
 
   Widget campo(String label, TextEditingController controller) {
     return Padding(
