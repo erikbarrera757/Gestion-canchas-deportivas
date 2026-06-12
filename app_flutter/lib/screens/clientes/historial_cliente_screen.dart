@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/cliente.dart';
+import '../../data/reservas_data.dart';
 
 class HistorialClienteScreen extends StatelessWidget {
   final Cliente cliente;
@@ -11,23 +12,10 @@ class HistorialClienteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reservas = [
-      {
-        "fecha": "01/06/2026",
-        "cancha": "Cancha Fútbol",
-        "estado": "Completada"
-      },
-      {
-        "fecha": "05/06/2026",
-        "cancha": "Cancha Pádel",
-        "estado": "Completada"
-      },
-      {
-        "fecha": "08/06/2026",
-        "cancha": "Cancha Fútbol",
-        "estado": "Cancelada"
-      },
-    ];
+
+    final reservasCliente = reservas.where(
+      (reserva) => reserva.clienteCi == cliente.ci,
+    ).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,6 +27,7 @@ class HistorialClienteScreen extends StatelessWidget {
           children: [
             Card(
               child: ListTile(
+                leading: const Icon(Icons.person),
                 title: Text(
                   "${cliente.nombre} ${cliente.apellido}",
                 ),
@@ -61,23 +50,39 @@ class HistorialClienteScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             Expanded(
-              child: ListView.builder(
-                itemCount: reservas.length,
-                itemBuilder: (context, index) {
-                  final reserva = reservas[index];
+              child: reservasCliente.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Este cliente no tiene reservas registradas",
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: reservasCliente.length,
+                      itemBuilder: (context, index) {
 
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                        reserva["cancha"]!,
-                      ),
-                      subtitle: Text(
-                        "Fecha: ${reserva["fecha"]}\nEstado: ${reserva["estado"]}",
-                      ),
+                        final reserva =
+                            reservasCliente[index];
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.sports_soccer,
+                            ),
+                            title: Text(
+                              reserva.cancha,
+                            ),
+                            subtitle: Text(
+                              "Fecha: ${reserva.fecha}\n"
+                              "Hora: ${reserva.horaInicio} - ${reserva.horaFin}\n"
+                              "Estado: ${reserva.estado}",
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
