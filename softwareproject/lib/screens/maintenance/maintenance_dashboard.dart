@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../models/user_model.dart';
 import '../../services/mantenimiento_service.dart';
 import '../../services/cancha_service.dart';
 import '../../services/auth_service.dart';
@@ -18,6 +19,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard> {
   List<Map<String, dynamic>> _personal = [];
   bool _loading = true;
   String? _error;
+
+  bool get _esAdmin => AuthService.currentUser?.role == UserRole.administrador;
 
   @override
   void initState() {
@@ -515,7 +518,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    if (tecnico.isEmpty)
+                                    // Solo el Administrador puede asignar personal
+                                    if (tecnico.isEmpty && _esAdmin)
                                       ElevatedButton.icon(
                                         onPressed: () => _asignarTecnico(ticket),
                                         icon: const Icon(Icons.person_add, size: 18),
@@ -523,6 +527,13 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard> {
                                         style: ElevatedButton.styleFrom(
                                             backgroundColor: AppTheme.secondaryColor),
                                       ),
+                                    // Si no hay técnico y el user es técnico, mostrar mensaje
+                                    if (tecnico.isEmpty && !_esAdmin)
+                                      const Text(
+                                        'Esperando asignación del administrador...',
+                                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                                      ),
+                                    // Técnico (y admin) pueden actualizar avance y finalizar
                                     if (tecnico.isNotEmpty) ...[
                                       OutlinedButton.icon(
                                         onPressed: () => _registrarAvance(ticket),

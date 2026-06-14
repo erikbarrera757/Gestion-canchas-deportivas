@@ -9,6 +9,7 @@ import 'maintenance/maintenance_dashboard.dart';
 import 'admin/courts_admin_screen.dart';
 import 'admin/reports_screen.dart';
 import 'login_screen.dart';
+import '../widgets/notificacion_bell.dart';
 
 /// Definición de cada ítem de navegación con su rol requerido
 class _NavItem {
@@ -77,6 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
   List<_NavItem> get _visibleItems {
     final role = AuthService.currentUser!.role;
     return _allNavItems.where((item) => item.allowedRoles.contains(role)).toList();
+  }
+
+  /// Navega a una sección del sidebar por su título (usado desde notificaciones)
+  void _navegarASeccion(String titulo) {
+    final items = _visibleItems;
+    final idx = items.indexWhere((item) => item.title == titulo);
+    if (idx >= 0) setState(() => _selectedIndex = idx);
   }
 
   void _logout() async {
@@ -202,6 +210,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Row(
                         children: [
+                          // Notificación (solo admin)
+                          if (user.role == UserRole.administrador) ...[
+                            NotificacionBell(
+                              onNavigateToSection: _navegarASeccion,
+                            ),
+                          ],
+                          const SizedBox(width: 8),
                           Text(user.roleIcon, style: const TextStyle(fontSize: 20)),
                           const SizedBox(width: 8),
                           Text(user.nombre, style: const TextStyle(color: Colors.white70)),

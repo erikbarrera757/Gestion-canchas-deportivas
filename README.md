@@ -13,6 +13,14 @@ Cuando abras esta carpeta, encontrarás los siguientes elementos esenciales:
 
 ---
 
+## Abrir el módulo de incidencias e ir al formulario de registro. Capturar el formulario vacío o con datos de prueba (ID cancha, tipo de problema, descripción).
+1.	Enviar el formulario y capturar la confirmación con el número de ticket asignado.
+2.	Abrir el panel del administrador y capturar la notificación de nueva solicitud recibida.
+
+* *Herramientas: PDO MySQL Driver, phpMyAdmin, XAMPP.*
+
+---
+
 ### 1. Configuración del Backend (PHP API)
 1. **Copiar la carpeta de la API:**
    * Copia la carpeta `sportmanager_api` de este repositorio.

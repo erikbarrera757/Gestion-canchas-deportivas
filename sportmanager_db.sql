@@ -164,3 +164,18 @@ CREATE TABLE IF NOT EXISTS `tickets_mantenimiento` (
 INSERT INTO `tickets_mantenimiento` (`cancha_id`, `reportado_por`, `tipo`, `descripcion`, `estado`, `avance`, `tecnico_id`) VALUES
 (3, 1, 'Daño', 'Red rota, requiere reemplazo',   'Pendiente',  0,  NULL),
 (1, 2, 'Limpieza', 'Cancha sucia después del partido', 'En Proceso', 50, 4);
+
+-- ─────────────────────────────────────────
+-- TABLA: notificaciones
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `notificaciones` (
+  `id`                 INT          NOT NULL AUTO_INCREMENT,
+  `usuario_destino_id` INT          NOT NULL,
+  `tipo`               VARCHAR(50)  NOT NULL,
+  `mensaje`            TEXT         NOT NULL,
+  `referencia_id`      INT          DEFAULT NULL,
+  `leida`              TINYINT(1)   NOT NULL DEFAULT 0,
+  `creado_en`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`usuario_destino_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
