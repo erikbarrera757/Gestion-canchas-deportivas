@@ -1,6 +1,6 @@
 {
-    "name": "app_flutter",
-    "short_name": "app_flutter",
+    "name": "reserva_canchas_flutter",
+    "short_name": "reserva_canchas_flutter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
