@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportManager Pro - Panel de Alquileres y Retornos</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --primary: #00adb5;
+            --text: #eeeeee;
+            --text-secondary: #b3b3b3;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h2, h3 { color: var(--primary); }
+
+        .card {
+            background-color: var(--surface);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        select, input[type="number"] {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #008c95; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th { background-color: #252525; color: var(--primary); }
+
+        .badge-active {
+            background-color: rgba(255, 193, 7, 0.15);
+            color: var(--warning);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border: 1px solid var(--warning);
+        }
+
+        .action-select {
+            padding: 6px;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            margin-right: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            background-color: var(--success);
+            border: none;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-sm:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Control de Préstamos y Activos Físicos</h2>
+
+    <div class="card">
+        <h3>CU18: Despachar Alquiler de Implemento Deportivo</h3>
+        <div class="grid-3">
+            <div class="form-group">
+                <label for="selectImplemento">Seleccionar Artículo Disponible</label>
+                <select id="selectImplemento">
+                    <option value="">Cargando artículos...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="inputHoras">Tiempo de Uso (Horas)</label>
+                <input type="number" id="inputHoras" min="1" value="1">
+            </div>
+            <button class="btn" onclick="registrarAlquiler()">Despachar Préstamo</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>CU19: Auditoría Visual de Retornos y Devoluciones Activas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Alq.</th>
+                    <th>Implemento</th>
+                    <th>Deportista / Cliente</th>
+                    <th>Monto Base</th>
+                    <th>Estado Interno</th>
+                    <th>Control de Calidad Constructiva y Cierre</th>
+                </tr>
+            </thead>
+            <tbody id="tablaAlquileres">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost/Gestion-canchas-deportivas-main/sportmanager_api/tienda/alquileres.php';
+
+    // Cargar listas al abrir el módulo
+    async function cargarModuloAlquileres() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+
+            // 1. Renderizar el selector de artículos para alquilar
+            const select = document.getElementById('selectImplemento');
+            select.innerHTML = '<option value="">-- Seleccionar Implemento --</option>';
+            data.implementos.forEach(imp => {
+                const deshabilitado = parseInt(imp.stock) <= 0 ? 'disabled' : '';
+                const textoExtra = parseInt(imp.stock) <= 0 ? '(AGOTADO)' : `(Dispo: ${imp.stock} - ${imp.precio_alquiler} Bs/hr)`;
+                select.innerHTML += `<option value="${imp.id}" ${deshabilitado}>${imp.nombre} ${textoExtra}</option>`;
+            });
+
+            // 2. Renderizar la tabla de alquileres activos para devoluciones
+            const tbody = document.getElementById('tablaAlquileres');
+            tbody.innerHTML = '';
+
+            if(data.alquileres.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">No existen préstamos de indumentaria activos en este momento.</td></tr>';
+                return;
+            }
+
+            data.alquileres.forEach(alq => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${alq.id}</td>
+                        <td><strong>${alq.implemento}</strong></td>
+                        <td>${alq.cliente}</td>
+                        <td>${alq.monto} Bs.</td>
+                        <td><span class="badge-active">En Juego / Activo</span></td>
+                        <td>
+                            <select id="estado_retorno_${alq.id}" class="action-select">
+                                <option value="Buen Estado">Buen Estado (Limpio)</option>
+                                <option value="Dañado">Dañado (Multa 50%)</option>
+                                <option value="Extraviado">Extraviado (Cobra 100%)</option>
+                            </select>
+                            <button class="btn-sm" onclick="procesarDevolucion(${alq.id})">Recibir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+        } catch (error) {
+            console.error("Error al refrescar el panel de préstamos:", error);
+        }
+    }
+
+    // CU18: Guardar nuevo préstamo
+    async function registrarAlquiler() {
+        const impId = document.getElementById('selectImplemento').value;
+        const hrs = document.getElementById('inputHoras').value;
+
+        if(!impId || hrs <= 0) return alert("Seleccione un artículo e indique las horas de uso.");
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    accion: 'alquilar',
+                    implemento_id: parseInt(impId),
+                    horas: parseInt(hrs)
+                })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert(data.mensaje);
+                cargarModuloAlquileres();
+            } else {
+                alert("REGLA DE CONTROL:\n" + data.error);
+            }
+        } catch (e) {
+            alert("Error de red.");
+        }
+    }
+
+    // CU19: Procesar retorno físico y multas
+    async function procesarDevolucion(idAlq) {
+        const estFisico = document.getElementById(`estado_retorno_${idAlq}`).value;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    accion: 'devolver',
+                    alquiler_id: idAlq,
+                    estado_fisico_retorno: estFisico
+                })
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                alert(data.mensaje);
+                cargarModuloAlquileres();
+            } else {
+                alert("Error al procesar: " + data.error);
+            }
+        } catch (e) {
+            alert("Error de comunicación con el servidor.");
+        }
+    }
+
+    // Carga inicial
+    cargarModuloAlquileres();
+</script>
+</body>
+</html>
