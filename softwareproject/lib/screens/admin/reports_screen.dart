@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/mantenimiento_service.dart';
 import '../../services/api_service.dart';
+import '../../utils/export_helper.dart' as helper;
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -54,6 +55,74 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
+  Map<String, dynamic> _obtenerDatosReporte() {
+    String title = '';
+    List<String> headers = [];
+    List<List<String>> rows = [];
+
+    switch (_selectedReport) {
+      case 'reservas':
+        title = 'Reporte de Reservas';
+        headers = const ['Fecha', 'Cliente', 'Cancha', 'Horario', 'Estado', 'Precio'];
+        rows = _datos.map((r) => [
+          r['fecha']?.toString() ?? '',
+          r['cliente']?.toString() ?? '',
+          r['cancha']?.toString() ?? '',
+          r['horario']?.toString() ?? '',
+          r['estado']?.toString() ?? '',
+          '\$${r['precio'] ?? 0}',
+        ]).toList();
+        break;
+
+      case 'ingresos_snack':
+        title = 'Reporte de Ingresos — Snack';
+        headers = const ['Fecha', 'Producto', 'Cantidad', 'Total', 'Vendedor'];
+        rows = _datos.map((r) => [
+          r['fecha']?.toString() ?? '',
+          r['producto']?.toString() ?? '',
+          r['cantidad']?.toString() ?? '1',
+          '\$${r['total'] ?? 0}',
+          r['vendedor']?.toString() ?? '',
+        ]).toList();
+        break;
+
+      case 'stock_tienda':
+        title = 'Reporte de Stock — Tienda Deportiva';
+        headers = const ['Nombre', 'Categoría', 'Stock', 'Alquiler', 'Venta'];
+        rows = _datos.map((r) => [
+          r['nombre']?.toString() ?? '',
+          r['categoria']?.toString() ?? '',
+          r['stock']?.toString() ?? '0',
+          '\$${r['precio_alquiler'] ?? 0}',
+          '\$${r['precio_venta'] ?? 0}',
+        ]).toList();
+        break;
+
+      case 'mantenimiento':
+        title = 'Reporte de Incidencias de Mantenimiento';
+        headers = const ['Ticket', 'Cancha', 'Tipo', 'Estado', 'Avance', 'Técnico'];
+        rows = _datos.asMap().entries.map((e) {
+          final r = e.value;
+          final ticketId = 'TK-${(e.key + 1).toString().padLeft(3, '0')}';
+          return [
+            ticketId,
+            r['cancha']?.toString() ?? '',
+            r['tipo']?.toString() ?? '',
+            r['estado']?.toString() ?? '',
+            '${r['avance'] ?? 0}%',
+            r['tecnico']?.toString() ?? 'Sin asignar',
+          ];
+        }).toList();
+        break;
+    }
+
+    return {
+      'title': title,
+      'headers': headers,
+      'rows': rows,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -87,28 +156,54 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: _isGenerating ? null : _generarReporte,
-                  icon: _isGenerating
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                        )
-                      : const Icon(Icons.bar_chart),
-                  label: Text(_isGenerating ? 'Generando...' : 'Generar'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _isGenerating ? null : _generarReporte,
+                      icon: _isGenerating
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            )
+                          : const Icon(Icons.bar_chart),
+                      label: Text(_isGenerating ? 'Generando...' : 'Generar'),
+                    ),
+                    if (_datos.isNotEmpty) ...[
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final reportData = _obtenerDatosReporte();
+                          helper.exportToCsv(
+                            reportData['title'] as String,
+                            reportData['headers'] as List<String>,
+                            reportData['rows'] as List<List<String>>,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('CSV descargado con éxito')),
+                          );
+                        },
+                        icon: const Icon(Icons.table_chart),
+                        label: const Text('Exportar CSV'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final reportData = _obtenerDatosReporte();
+                          helper.exportToPdf(
+                            reportData['title'] as String,
+                            reportData['headers'] as List<String>,
+                            reportData['rows'] as List<List<String>>,
+                          );
+                        },
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Exportar PDF'),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 8),
-                if (_datos.isNotEmpty)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Exportación disponible próximamente')),
-                      );
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Exportar'),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
-                  ),
               ],
             ),
           ),
