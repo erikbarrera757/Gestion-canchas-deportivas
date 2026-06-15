@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportManager Pro - Mantenimiento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --bg: #121212; 
+            --card: #1e1e1e; 
+            --border: #2d2d2d; 
+            --text: #e0e0e0; 
+            --green: #198754; 
+            --green-hover: #146c43;
+            --nav-bg: #1a1a1a;
+            --sidebar-bg: #161616;
+            --yellow: #ffc107;
+            --red: #dc3545;
+            --blue: #0d6efd;
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding-top: 56px;
+        }
+
+        /* ----- NAVBAR SUPERIOR ----- */
+        .navbar {
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .navbar-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar-brand i { color: var(--green); }
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: 5px;
+        }
+        .nav-link {
+            color: #aaa;
+            text-decoration: none;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-link.active { color: white; background: var(--green); }
+        .btn-logout { color: #ff6b6b; border: 1px solid #ff6b6b; }
+        .btn-logout:hover { background: #ff6b6b; color: white; }
+
+        /* ----- DISPOSICION LAYOUT ----- */
+        .layout-container {
+            display: flex;
+            min-height: calc(100vh - 56px);
+        }
+
+        /* BARRA LATERAL */
+        .sidebar {
+            width: 290px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .sidebar-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-btn {
+            width: 100%;
+            background: #222;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: left;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .sidebar-btn:hover, .sidebar-btn.active {
+            background: #2a2a2a;
+            border-color: var(--green);
+        }
+        .sidebar-btn div { display: flex; align-items: center; gap: 10px; }
+
+        /* VISTAS CENTRALES INTERCAMBIABLES */
+        .main-content {
+            flex: 1;
+            padding: 25px;
+            box-sizing: border-box;
+            max-width: 1100px;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        
+        h1, h2 { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-top: 0; }
+        
+        /* CONTENEDORES DE TICKETS */
+        .ticket { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 6px; 
+            border-left: 4px solid var(--yellow); 
+        }
+        .ticket.urgente { border-left-color: var(--red); }
+        .ticket.proceso { border-left-color: var(--blue); }
+        .ticket.finalizado { border-left-color: var(--green); }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge.pendiente { background: rgba(255, 193, 7, 0.2); color: var(--yellow); }
+        .badge.proceso { background: rgba(13, 110, 253, 0.2); color: var(--blue); }
+        .badge.finalizado { background: rgba(25, 135, 84, 0.2); color: var(--green); }
+        .badge.sin_finalizar { background: rgba(220, 53, 69, 0.2); color: var(--red); }
+
+        /* COMPONENTES DE INTERFAZ */
+        form { background: var(--card); padding: 20px; margin-bottom: 25px; border-radius: 6px; border: 1px solid var(--border); }
+        input, textarea, select, button { width: 100%; padding: 10px; margin: 8px 0; background: var(--bg); border: 1px solid var(--border); color: white; box-sizing: border-box; border-radius: 4px; font-size: 0.95rem; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green); }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        .btn-submit { background: var(--green); border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 12px; }
+        .btn-submit:hover { background: var(--green-hover); }
+        .btn-action { width: auto; padding: 6px 12px; margin: 4px; font-size: 0.85rem; cursor: pointer; font-weight: bold; }
+        
+        .status-msg { text-align: center; color: #888; font-style: italic; padding: 20px; }
+        
+        /* TABLAS DE CONTROL */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: var(--card); border-radius: 6px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #252525; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a class="navbar-brand" href="#"><i class="fa-solid fa-dumbbell"></i> SportManager Pro</a>
+        <ul class="navbar-nav">
+            <li><a class="nav-link active" href="http://localhost:8080/sportmanager_api/mantenimiento/mantenimiento.html"><i class="fa-solid fa-wrench"></i> Mantenimiento</a></li>
+            <li><a class="nav-link" href="http://localhost:8080/sportmanager_api/usuarios/usuario.html"><i class="fa-solid fa-users"></i> Usuarios</a></li>
+            <li><a class="nav-link" href="http://localhost:8080/sportmanager_api/canchas/canchas.html"><i class="fa-solid fa-layer-group"></i> Canchas</a></li>
+            <li><a class="nav-link" href="http://localhost:8080/sportmanager_api/reservas/reservas.html"><i class="fa-solid fa-calendar-days"></i> Reservas</a></li>
+            <li><a class="nav-link" href="http://localhost:8080/sportmanager_api/snack/tienda.html"><i class="fa-solid fa-shop"></i> Snack</a></li>
+            <li><a class="nav-link" href="http://localhost:8080/sportmanager_api/reportes/reportes.html"><i class="fa-solid fa-chart-line"></i> Reportes</a></li>
+            <li><a class="nav-link btn-logout" href="http://localhost:8080/sportmanager_api/auth/login.html"><i class="fa-solid fa-right-from-bracket"></i> Salir</a></li>
+        </ul>
+    </nav>
+
+    <div class="layout-container">
+        
+        <aside class="sidebar">
+            <div>
+                <div class="sidebar-title"><i class="fa-solid fa-folder-open"></i> Flujo de Casos de Uso</div>
+                <ul class="sidebar-menu">
+                    <li>
+                        <button class="sidebar-btn active" onclick="cambiarVista('cu28-section', this)">
+                            <div><i class="fa-solid fa-file-medical" style="color: var(--yellow);"></i>Registrar Solicitud</div>
+                            <i class="fa-solid fa-chevron-right" style="font-size:0.7rem; color:#666;"></i>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="sidebar-btn" onclick="cambiarVista('cu27-section', this)">
+                            <div><i class="fa-solid fa-user-gear" style="color: var(--blue);"></i>  Asignar Mantenimiento</div>
+                            <i class="fa-solid fa-chevron-right" style="font-size:0.7rem; color:#666;"></i>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="sidebar-btn" onclick="cambiarVista('cu26-section', this)">
+                            <div><i class="fa-solid fa-clipboard-check" style="color: var(--green);"></i>  Notificar Finalización</div>
+                            <i class="fa-solid fa-chevron-right" style="font-size:0.7rem; color:#666;"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <section id="cu28-section" class="content-section active">
+                <h1><i class="fa-solid fa-file-medical"></i> CU 28: Registrar Solicitud de Mantenimiento</h1>
+                
+                <form id="solicitudForm">
+                    <h3 style="margin-top:0;"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Daño o Incidencia</h3>
+                    
+                    <label style="font-size: 0.85rem; color: #aaa;">Seleccionar Cancha Afectada</label>
+                    <select id="solicitud-cancha" required>
+                        <option value="">-- Seleccionar Cancha --</option>
+                        <option value="1">Cancha N° 1 (Sintética)</option>
+                        <option value="2">Cancha N° 2 (Sintética)</option>
+                        <option value="3">Cancha N° 3 (Parqué)</option>
+                    </select>
+
+                    <label style="font-size: 0.85rem; color: #aaa;">Ubicación Específica o Elemento Dañado</label>
+                    <input type="text" id="solicitud-titulo" placeholder="Ej: Red del arco rota / Reflector quemado" required>
+                    
+                    <label style="font-size: 0.85rem; color: #aaa;">Descripción Técnica Detallada</label>
+                    <textarea id="solicitud-descripcion" placeholder="Explique con detalle el problema para que el técnico lo entienda..." required></textarea>
+                    
+                    <button type="submit" class="btn-submit"><i class="fa-solid fa-square-plus"></i> Guardar y Generar Ticket</button>
+                </form>
+
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial General de Tickets Registrados</h2>
+                <div id="tickets-container-cu28">
+                    <div class="status-msg">Cargando base de datos...</div>
+                </div>
+            </section>
+
+            <section id="cu27-section" class="content-section">
+                <h1><i class="fa-solid fa-user-gear"></i> CU 27: Asignar Tareas de Mantenimiento</h1>
+                <p style="color:#aaa;">Selecciona un ticket pendiente y asígnalo al personal técnico adecuado.</p>
+                
+                <form id="asignacionForm">
+                    <h3 style="margin-top:0;"><i class="fa-solid fa-user-plus"></i> Formulario de Asignación Operativa</h3>
+                    
+                    <label style="font-size: 0.85rem; color: #aaa;">Seleccionar Ticket Pendiente</label>
+                    <select id="asignar-ticket-id" required>
+                        <option value="">-- Seleccionar Ticket Activo --</option>
+                        </select>
+
+                    <label style="font-size: 0.85rem; color: #aaa;">Técnico / Operario Responsable</label>
+                    <select id="asignar-personal" required>
+                        <option value="">-- Seleccionar Personal --</option>
+                        <option value="Juan Perez (Técnico Eléctrico)">Juan Perez (Técnico Eléctrico)</option>
+                        <option value="Carlos Mendoza (Especialista Césped)">Carlos Mendoza (Especialista Césped)</option>
+                        <option value="Mantenimiento Externo (Subcontratado)">Mantenimiento Externo (Subcontratado)</option>
+                    </select>
+
+                    <label style="font-size: 0.85rem; color: #aaa;">Tipo de Cambio de Estado en Cancha</label>
+                    <select id="asignar-estado-cancha" required>
+                        <option value="En mantenimiento">En mantenimiento</option>
+                        <option value="En limpieza">En limpieza</option>
+                    </select>
+                    
+                    <button type="submit" class="btn-submit" style="background: var(--blue);"><i class="fa-solid fa-route"></i> Procesar y Asignar Tarea</button>
+                </form>
+            </section>
+
+            <section id="cu26-section" class="content-section">
+                <h1><i class="fa-solid fa-clipboard-check"></i> CU 26: Notificar Finalización de Tareas</h1>
+                <p style="color:#aaa;">Cierre del ciclo de vida del ticket y restablecimiento del estado operacional de la infraestructura.</p>
+
+                <h2><i class="fa-solid fa-list-check"></i> Lista de Control de Tareas en Proceso</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Ticket</th>
+                            <th>Cancha</th>
+                            <th>Descripción</th>
+                            <th>Responsable Asignado</th>
+                            <th>Acciones del Personal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-finalizacion-body">
+                        </tbody>
+                </table>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+    const API_URL = 'http://localhost:8080/sportmanager_api/mantenimiento/tickets.php';
+
+    // 1. CONTROLADOR DE VISTAS
+    function cambiarVista(sectionId, botonActivo) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+        botonActivo.classList.add('active');
+        
+        if (sectionId === 'cu28-section') cargarTicketsMantenimiento();
+        if (sectionId === 'cu27-section') cargarCombosAsignacion();
+        if (sectionId === 'cu26-section') cargarTablaFinalizacion();
+    }
+
+    // 2. CU 28: CARGAR Y REGISTRAR TICKETS
+    async function cargarTicketsMantenimiento() {
+        const container = document.getElementById('tickets-container-cu28');
+        try {
+            const res = await fetch(API_URL);
+            const tickets = await res.json();
+            container.innerHTML = tickets.length === 0 ? '<div class="status-msg">No hay incidencias.</div>' : '';
+            tickets.forEach(t => {
+                container.innerHTML += `<div class="ticket ${t.estado}">
+                    <h3>${t.cancha_nombre} - ${t.tipo} <span class="badge ${t.estado}">${t.estado}</span></h3>
+                    <p>${t.descripcion}</p>
+                    ${t.tecnico_nombre ? `<p style="color:var(--blue)">Técnico: ${t.tecnico_nombre}</p>` : ''}
+                </div>`;
+            });
+        } catch (err) { console.error(err); }
+    }
+
+    document.getElementById('solicitudForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            cancha_id: document.getElementById('solicitud-cancha').value,
+            reportado_por: 1, // ID fijo del usuario logueado
+            tipo: 'Mantenimiento',
+            descripcion: document.getElementById('solicitud-descripcion').value
+        };
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+        if (res.ok) { alert('Ticket registrado'); cargarTicketsMantenimiento(); }
+    });
+
+    // 3. CU 27: ASIGNAR TÉCNICOS
+    async function cargarCombosAsignacion() {
+        const select = document.getElementById('asignar-ticket-id');
+        const res = await fetch(API_URL);
+        const tickets = await res.json();
+        select.innerHTML = '<option value="">-- Seleccionar Ticket --</option>';
+        tickets.filter(t => t.estado === 'Pendiente').forEach(t => {
+            select.innerHTML += `<option value="${t.id}">#${t.id} - ${t.cancha_nombre}</option>`;
+        });
+    }
+
+    document.getElementById('asignacionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('asignar-ticket-id').value;
+        const payload = { tecnico_id: 2, estado: 'En Proceso' }; // ID 2: técnico
+        const res = await fetch(`${API_URL}?id=${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        if (res.ok) alert('Asignado con éxito');
+    });
+
+    // 4. CU 26: FINALIZAR TAREAS
+    async function cargarTablaFinalizacion() {
+        const tbody = document.getElementById('tabla-finalizacion-body');
+        const res = await fetch(API_URL);
+        const tickets = await res.json();
+        tbody.innerHTML = '';
+        tickets.filter(t => t.estado === 'En Proceso').forEach(t => {
+            tbody.innerHTML += `<tr>
+                <td>#${t.id}</td><td>${t.cancha_nombre}</td><td>${t.tecnico_nombre}</td>
+                <td><button onclick="resolver(${t.id})">Finalizar</button></td>
+            </tr>`;
+        });
+    }
+
+    async function resolver(id) {
+        await fetch(`${API_URL}?id=${id}`, { method: 'PUT', body: JSON.stringify({ estado: 'Completada' }) });
+        cargarTablaFinalizacion();
+    }
+
+    window.onload = cargarTicketsMantenimiento;
+</script>
+</body>
+</html>

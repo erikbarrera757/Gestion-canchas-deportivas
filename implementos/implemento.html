@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportManager Pro - Implementos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --green: #198754; --border: #2d2d2d; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 20px; }
+        h1 { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        table { width: 100%; border-collapse: collapse; text-align: left; color: var(--text); }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); }
+        th { background-color: #1a1a1a; color: white; font-weight: bold; }
+        tr:hover { background-color: #252525; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; background: var(--green); color: white; }
+        .badge-low { background: #b02a37; }
+    </style>
+</head>
+<body>
+    <h1><i class="fa-solid fa-shirt"></i> Alquiler de Implementos Deportivos</h1>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Artículo</th>
+                    <th>Cantidad Total</th>
+                    <th>Disponibles</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-implementos">
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #888;">Cargando inventario desde PHPMyAdmin...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function cargarImplementos() {
+            try {
+                // Conexión directa a tu endpoint real de implementos
+                const res = await fetch('http://localhost:8080/sportmanager_api/implementos/index.php');
+                const datos = await res.json();
+                const tbody = document.getElementById('tabla-implementos');
+                tbody.innerHTML = '';
+
+                if (datos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No hay implementos registrados en la base de datos.</td></tr>`;
+                    return;
+                }
+
+                datos.forEach(i => {
+                    // Mapeo flexible por si tus columnas se llaman id_implemento, articulo/nombre, stock_total, etc.
+                    const id = i.id_implemento || i.id;
+                    const nombre = i.articulo || i.nombre;
+                    const total = i.total || i.cantidad || i.stock_total;
+                    const disponibles = i.disponibles || i.stock_disponible;
+
+                    // Alerta visual si quedan pocos elementos disponibles
+                    const badgeClass = disponibles <= 3 ? 'badge badge-low' : 'badge';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>#${id}</strong></td>
+                            <td>${nombre}</td>
+                            <td>${total} unidades</td>
+                            <td><span class="${badgeClass}">${disponibles} u.</span></td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                document.getElementById('tabla-implementos').innerHTML = `
+                    <tr><td colspan="4" style="text-align: center; color: #ff6b6b;">Error al conectar con la base de datos de XAMPP.</td></tr>
+                `;
+                console.error("Error en Fetch:", err);
+            }
+        }
+
+        // Ejecutar la carga apenas abra la pestaña
+        window.onload = cargarImplementos;
+    </script>
+</body>
+</html>
