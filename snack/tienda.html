@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportManager Pro - Tienda Snack Bar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --green: #198754; --green-hover: #146c43; --border: #2d2d2d; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        @media (min-width: 902px) {
+            body { flex-direction: row; align-items: flex-start; }
+        }
+
+        h1, h2 { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-top: 0; }
+        .productos-section { flex: 2; }
+        .carrito-section { flex: 1; background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: sticky; top: 20px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 8px; text-align: center; }
+        
+        .price { font-size: 1.25rem; color: #fff; font-weight: bold; margin: 8px 0; }
+        .stock { font-size: 0.85rem; color: #aaa; margin-bottom: 12px; }
+        .stock-low { color: #ff6b6b; font-weight: bold; }
+        
+        .btn { width: 100%; background: var(--green); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; font-size: 0.9rem; }
+        .btn:hover { background: var(--green-hover); }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        
+        label { display: block; font-size: 0.85rem; color: #aaa; margin: 10px 0 4px 0; }
+        input { width: 100%; padding: 8px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px; }
+
+        .item-carrito { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .btn-remove { background: none; border: none; color: #ff6b6b; cursor: pointer; }
+        .total-box { font-size: 1.2rem; font-weight: bold; text-align: right; margin: 15px 0; color: #fff; }
+        
+        .status-msg { text-align: center; color: #888; font-style: italic; padding: 20px; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+
+    <div class="productos-section">
+        <h1><i class="fa-solid fa-shop"></i> Tienda / Snack Stock</h1>
+        <div id="productos-grid" class="grid">
+            <div class="status-msg">Cargando snacks...</div>
+        </div>
+    </div>
+
+    <div class="carrito-section">
+        <h2><i class="fa-solid fa-basket-shopping"></i> Carrito de Ventas</h2>
+        
+        <label for="usuario_id">ID del Vendedor (Usuario)</label>
+        <input type="number" id="usuario_id" value="1" min="1" required placeholder="Ej: 1">
+        
+        <div id="items-carrito-container">
+            <div style="text-align: center; color: #666; padding: 15px;">El carrito está vacío.</div>
+        </div>
+        
+        <div class="total-box">Total: $<span id="total-compra">0.00</span></div>
+        <button class="btn" id="btn-finalizar" onclick="procesarVenta()" disabled><i class="fa-solid fa-cash-register"></i> Procesar Venta</button>
+    </div>
+
+    <script>
+        let carrito = [];
+        let productosCache = [];
+
+        // 1. CARGAR SNACKS DE LA BASE DE DATOS
+        async function cargarProductos() {
+            try {
+                const res = await fetch('http://localhost:8080/sportmanager_api/snack/productos.php');
+                productosCache = await res.json();
+                const grid = document.getElementById('productos-grid');
+                grid.innerHTML = '';
+
+                if (productosCache.length === 0) {
+                    grid.innerHTML = '<div class="status-msg">No hay productos disponibles.</div>';
+                    return;
+                }
+
+                productosCache.forEach(p => {
+                    const id = p.id;
+                    const nombre = p.nombre;
+                    const precio = parseFloat(p.precio) || 0;
+                    const stock = parseInt(p.stock) || 0;
+
+                    const sinStock = stock <= 0;
+                    const claseStock = sinStock ? 'stock stock-low' : 'stock';
+
+                    grid.innerHTML += `
+                        <div class="card">
+                            <h3>${nombre}</h3>
+                            <div class="price">$${precio.toFixed(2)}</div>
+                            <div class="${claseStock}"><i class="fa-solid fa-box-open"></i> Stock: ${stock} u.</div>
+                            <button class="btn" onclick="agregarAlCarrito(${id})" ${sinStock ? 'disabled' : ''}>
+                                <i class="fa-solid fa-plus"></i> ${sinStock ? 'Sin Stock' : 'Agregar'}
+                            </button>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                document.getElementById('productos-grid').innerHTML = `
+                    <div class="status-msg" style="color: #ff6b6b;"><i class="fa-solid fa-exclamation-triangle"></i> Error al conectar con la base de datos.</div>
+                `;
+            }
+        }
+
+        // 2. LÓGICA DEL CARRITO EN MEMORIA
+        function agregarAlCarrito(id) {
+            const prod = productosCache.find(p => p.id === id);
+            if (!prod) return;
+
+            const itemEnCarrito = carrito.find(item => item.producto_id === id);
+
+            if (itemEnCarrito) {
+                if (itemEnCarrito.cantidad >= prod.stock) {
+                    alert(`No puedes agregar más. El stock disponible es de ${prod.stock} unidades.`);
+                    return;
+                }
+                itemEnCarrito.cantidad++;
+            } else {
+                carrito.push({
+                    producto_id: id,
+                    nombre: prod.nombre,
+                    precio: parseFloat(prod.precio),
+                    cantidad: 1
+                });
+            }
+            renderizarCarrito();
+        }
+
+        function eliminarDelCarrito(id) {
+            carrito = carrito.filter(item => item.producto_id !== id);
+            renderizarCarrito();
+        }
+
+        function renderizarCarrito() {
+            const container = document.getElementById('items-carrito-container');
+            const totalSpan = document.getElementById('total-compra');
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            
+            container.innerHTML = '';
+            let total = 0;
+
+            if (carrito.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #666; padding: 15px;">El carrito está vacío.</div>';
+                totalSpan.innerText = '0.00';
+                btnFinalizar.disabled = true;
+                return;
+            }
+
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+
+                container.innerHTML += `
+                    <div class="item-carrito">
+                        <div>
+                            <strong>${item.nombre}</strong><br>
+                            <small>${item.cantidad}x $${item.precio.toFixed(2)}</small>
+                        </div>
+                        <div>
+                            <span style="margin-right: 10px; font-weight: bold;">$${subtotal.toFixed(2)}</span>
+                            <button class="btn-remove" onclick="eliminarDelCarrito(${item.producto_id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            totalSpan.innerText = total.toFixed(2);
+            btnFinalizar.disabled = false;
+        }
+
+        // 3. ENVIAR TODO EL CARRITO AL POST DE TU BACKEND PHP
+        async function procesarVenta() {
+            const vendedorId = document.getElementById('usuario_id').value;
+            
+            if (!vendedorId) {
+                alert('Por favor, ingresa el ID del vendedor para registrar el movimiento.');
+                return;
+            }
+
+            // Mapeamos el carrito al formato [{producto_id: X, cantidad: Y}] que pide tu backend
+            const payload = {
+                usuario_id: parseInt(vendedorId),
+                items: carrito.map(item => ({
+                    producto_id: item.producto_id,
+                    cantidad: item.cantidad
+                }))
+            };
+
+            try {
+                const res = await fetch('http://localhost:8080/sportmanager_api/snack/ventas.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert('¡Venta realizada con éxito! El stock ha sido descontado mediante transacción.');
+                    carrito = []; // Limpiamos el carrito
+                    renderizarCarrito(); // Actualizamos la vista del carrito
+                    cargarProductos(); // Volvemos a traer el stock fresco de PHPMyAdmin
+                } else {
+                    const errorData = await res.json();
+                    alert('Error en la transacción: ' + (errorData.error || 'No se pudo procesar.'));
+                }
+            } catch (err) {
+                alert('Error crítico de red. Verifica la conexión con XAMPP.');
+                console.error(err);
+            }
+        }
+
+        window.onload = cargarProductos;
+    </script>
+</body>
+</html>

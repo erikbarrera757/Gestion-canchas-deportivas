@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportManager Pro - Gestión de Inventario y Mermas</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --primary: #00adb5;
+            --text: #eeeeee;
+            --text-secondary: #b3b3b3;
+            --danger-bg: rgba(220, 53, 69, 0.2);
+            --danger-border: #dc3545;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h2, h3 { color: var(--primary); }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: var(--surface);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .card {
+            background-color: var(--surface);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background-color: #252525;
+            color: var(--primary);
+        }
+
+        /* 4.a Estado Crítico: Fila teñida de rojo */
+        .stock-critico {
+            background-color: var(--danger-bg);
+            color: #ff8080;
+        }
+        .stock-critico td {
+            border-bottom: 1px solid var(--danger-border);
+        }
+
+        .badge-alert {
+            background-color: var(--danger-border);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        select, input[type="number"] {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background-color: #008c95; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h2>Módulo de Inventario (Snack y Tienda)</h2>
+
+    <div class="card">
+        <h3>CU17: Registrar Reporte de Merma / Baja Técnica</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="selectProducto">Seleccionar Producto Dañado/Vencido</label>
+                <select id="selectProducto">
+                    <option value="">Cargando productos...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="cantidadBaja">Cantidad a dar de Baja</label>
+                <input type="number" id="cantidadBaja" min="1" placeholder="Cantidad">
+            </div>
+            <div class="form-group">
+                <label for="selectMotivo">Motivo de la Baja</label>
+                <select id="selectMotivo">
+                    <option value="Vencimiento">Vencimiento</option>
+                    <option value="Rotura">Rotura</option>
+                    <option value="Defecto de Fábrica">Defecto de Fábrica</option>
+                </select>
+            </div>
+            <button class="btn" onclick="procesarReporteMerma()">Procesar Baja</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>CU14: Matriz de Control de Existencias</h3>
+        <div class="header-actions">
+            <input type="text" id="inputBuscar" class="search-bar" placeholder="Digitar caracteres alfanuméricos para filtrar en vivo (Nombre)..." oninput="consultarStock()">
+            <button class="btn" onclick="consultarStock()">Actualizar Tabla</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descripción del Producto</th>
+                    <th>Precio Venta</th>
+                    <th>Stock Actual</th>
+                    <th>Estado de Alerta</th>
+                </tr>
+            </thead>
+            <tbody id="tablaStock">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost/Gestion-canchas-deportivas-main/sportmanager_api/tienda/inventario.php';
+
+    // CU14: Consultar stock y renderizar la matriz con alertas en rojo
+    async function consultarStock() {
+        const buscarCriterio = document.getElementById('inputBuscar').value;
+        try {
+            const res = await fetch(`${API_URL}?buscar=${encodeURIComponent(buscarCriterio)}`);
+            const productos = await res.json();
+            
+            const tbody = document.getElementById('tablaStock');
+            const select = document.getElementById('selectProducto');
+            
+            tbody.innerHTML = '';
+            // Guardamos el ID seleccionado actualmente en el select para no perder la posición al refrescar
+            const selectedVal = select.value;
+            select.innerHTML = '<option value="">-- Seleccionar un ítem --</option>';
+
+            productos.forEach(prod => {
+                // Validar si entra en estado crítico (Stock <= 3 es nuestro umbral estándar para pruebas)
+                const esCritico = parseInt(prod.stock) <= 3;
+                const claseFila = esCritico ? 'stock-critico' : '';
+                const alertaTexto = esCritico ? '<span class="badge-alert">STOCK CRÍTICO</span>' : 'Estable';
+
+                // Insertar en la tabla
+                tbody.innerHTML += `
+                    <tr class="${claseFila}">
+                        <td>${prod.id}</td>
+                        <td><strong>${prod.nombre}</strong></td>
+                        <td>${prod.precio} Bs.</td>
+                        <td><strong>${prod.stock} u.</strong></td>
+                        <td>${alertaTexto}</td>
+                    </tr>
+                `;
+
+                // Cargar simultáneamente el selector de mermas
+                select.innerHTML += `<option value="${prod.id}">${prod.nombre} (Dispo: ${prod.stock})</option>`;
+            });
+
+            // Reasignar selección previa si existía
+            if(selectedVal) select.value = selectedVal;
+
+        } catch (error) {
+            console.error("Error al conectar con la API de inventarios:", error);
+        }
+    }
+
+    // CU17: Procesar y descontar merma
+    async function procesarReporteMerma() {
+        const idProd = document.getElementById('selectProducto').value;
+        const cant = document.getElementById('cantidadBaja').value;
+        const mot = document.getElementById('selectMotivo').value;
+
+        if(!idProd || !cant || !mot) {
+            return alert("Por favor complete todos los parámetros para la baja técnica.");
+        }
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    producto_id: parseInt(idProd),
+                    cantidad_baja: parseInt(cant),
+                    motivo: mot
+                })
+            });
+
+            const data = await res.json();
+            
+            if(data.success) {
+                alert(data.mensaje);
+                document.getElementById('cantidadBaja').value = '';
+                consultarStock(); // Refrescar en caliente la grilla
+            } else {
+                // Alerta de extensiones o validación de volumen del backend
+                alert("ERROR: " + data.error);
+            }
+        } catch (error) {
+            alert("Ocurrió un error de red al procesar la baja.");
+        }
+    }
+
+    // Ejecutar la primera carga al abrir la página
+    consultarStock();
+</script>
+</body>
+</html>

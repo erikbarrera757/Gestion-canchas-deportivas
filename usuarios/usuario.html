@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportManager Pro - Usuarios</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --bg: #121212; 
+            --card: #1e1e1e; 
+            --green: #198754; 
+            --green-hover: #146c43; 
+            --border: #2d2d2d; 
+            --text: #e0e0e0; 
+            --blue: #0d6efd;
+            --blue-hover: #0b5ed7;
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: sans-serif; 
+            margin: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        
+        @media (min-width: 768px) {
+            body { flex-direction: row; align-items: flex-start; }
+        }
+
+        .form-box, .list-box { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            border-radius: 8px; 
+            flex: 1; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
+        
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        h2 { margin: 0; padding: 0; font-size: 1.5rem; }
+        
+        label { display: block; font-size: 0.85rem; color: #aaa; margin-top: 10px; }
+        input, button { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 6px 0 12px 0; 
+            background: var(--bg); 
+            border: 1px solid var(--border); 
+            color: white; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 0.95rem; 
+        }
+        input:focus { outline: none; border-color: var(--green); }
+        
+        .btn-submit { background: var(--green); font-weight: bold; cursor: pointer; border: none; margin-top: 10px; transition: background 0.2s; }
+        .btn-submit:hover { background: var(--green-hover); }
+        
+        /* Estilo para el botón de Login */
+        .btn-login { 
+            width: auto; 
+            background: transparent; 
+            color: var(--blue); 
+            border: 1px solid var(--blue); 
+            padding: 6px 12px; 
+            margin: 0; 
+            font-size: 0.85rem; 
+            cursor: pointer; 
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .btn-login:hover { 
+            background: var(--blue); 
+            color: white; 
+        }
+        
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
+        .user-card { background: var(--bg); border: 1px solid var(--border); padding: 15px; border-radius: 6px; position: relative; }
+        .user-card h3 { margin: 0 0 8px 0; font-size: 1.1rem; color: #fff; }
+        .user-card p { margin: 4px 0; font-size: 0.85rem; color: #aaa; }
+        .user-card i { color: var(--green); margin-right: 5px; }
+        
+        .status-msg { text-align: center; color: #888; font-style: italic; padding: 20px; width: 100%; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+
+    <div class="form-box">
+        <div class="header-section">
+            <h2><i class="fa-solid fa-user-plus"></i> Registrar</h2>
+            <button class="btn-login" onclick="irAlLogin()"><i class="fa-solid fa-right-to-bracket"></i> Ir al Login</button>
+        </div>
+        
+        <form id="usuarioForm">
+            <label for="nombre">Nombre Completo</label>
+            <input type="text" id="nombre" placeholder="Ej: Yesenia Condori" required>
+            
+            <label for="email">Correo Electrónico</label>
+            <input type="email" id="email" placeholder="Ej: jhesseniacn288@gmail.com" required>
+
+            <label for="password">Contraseña de Usuario</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+            
+            <label for="telefono">Teléfono / Celular (Opcional)</label>
+            <input type="text" id="telefono" placeholder="Ej: 62662525">
+            
+            <button type="submit" class="btn-submit"><i class="fa-solid fa-user-check"></i> Guardar Usuario</button>
+        </form>
+    </div>
+
+    <div class="list-box">
+        <div class="header-section">
+            <h2><i class="fa-solid fa-users"></i> Usuarios Registrados</h2>
+        </div>
+        <div id="usuarios-grid" class="user-grid">
+            <div class="status-msg">Cargando base de datos de usuarios...</div>
+        </div>
+    </div>
+
+    <script>
+        // DIRECCIÓN CORREGIDA HACIA LA CARPETA AUTH
+        function irAlLogin() {
+            // '../' sale de la carpeta 'usuarios' y luego entra a 'auth/login.html'
+            window.location.href = '../auth/login.html';
+        }
+
+        // 1. CARGAR USUARIOS DESDE TU ENDPOINT PHP
+        async function cargarUsuarios() {
+            try {
+                const res = await fetch('http://localhost:8080/sportmanager_api/usuarios/index.php');
+                const datos = await res.json();
+                const grid = document.getElementById('usuarios-grid');
+                grid.innerHTML = '';
+
+                if (!datos || datos.length === 0) {
+                    grid.innerHTML = '<div class="status-msg">No hay usuarios registrados.</div>';
+                    return;
+                }
+
+                datos.forEach(u => {
+                    const nombre = u.nombre || u.nombre_completo || 'Sin nombre';
+                    const email = u.email || u.correo || 'Sin correo';
+                    const telefono = u.telefono || u.celular || 'Sin teléfono';
+
+                    grid.innerHTML += `
+                        <div class="user-card">
+                            <h3><i class="fa-solid fa-circle-user"></i> ${nombre}</h3>
+                            <p><i class="fa-solid fa-envelope"></i> ${email}</p>
+                            <p><i class="fa-solid fa-phone"></i> ${telefono}</p>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                document.getElementById('usuarios-grid').innerHTML = `
+                    <div class="status-msg" style="color: #ff6b6b;"><i class="fa-solid fa-triangle-exclamation"></i> Error al conectar con el servidor.</div>
+                `;
+                console.error("Error en Fetch GET:", err);
+            }
+        }
+
+        // 2. ENVIAR UN NUEVO USUARIO (POST) A LA BASE DE DATOS
+        document.getElementById('usuarioForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nombreInput = document.getElementById('nombre');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const telInput = document.getElementById('telefono');
+
+            const payload = {
+                nombre: nombreInput.value.trim(),
+                email: emailInput.value.trim(),
+                password: passwordInput.value.trim(),
+                telefono: telInput.value.trim()
+            };
+
+            try {
+                const res = await fetch('http://localhost:8080/sportmanager_api/usuarios/index.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const dataResponse = await res.json();
+
+                if (res.ok || dataResponse.success) {
+                    alert('¡Usuario registrado exitosamente!');
+                    
+                    nombreInput.value = '';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    telInput.value = '';
+                    
+                    cargarUsuarios();
+                } else {
+                    alert('Error en el backend: ' + (dataResponse.error || 'No se pudo registrar.'));
+                }
+            } catch (err) {
+                alert('Error de red. Asegúrate de estar localmente en XAMPP.');
+                console.error("Error en Fetch POST:", err);
+            }
+        });
+
+        window.onload = cargarUsuarios;
+    </script>
+</body>
+</html>

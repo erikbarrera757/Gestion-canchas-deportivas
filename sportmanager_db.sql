@@ -179,3 +179,53 @@ CREATE TABLE IF NOT EXISTS `notificaciones` (
   PRIMARY KEY (`id`),
   FOREIGN KEY (`usuario_destino_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ─────────────────────────────────────────
+-- TABLA: turnos_caja 
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `turnos_caja` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT NOT NULL,
+  `monto_inicial` DECIMAL(8,2) NOT NULL,
+  `monto_final_real` DECIMAL(8,2) DEFAULT NULL,
+  `monto_final_calculado` DECIMAL(8,2) DEFAULT NULL,
+  `estado` ENUM('Abierta', 'Cerrada') NOT NULL DEFAULT 'Abierta',
+  `fecha_apertura` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_cierre` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`)
+) ENGINE=InnoDB;
+
+-- ─────────────────────────────────────────
+-- TABLA: control_mermas 
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `control_mermas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `producto_id` INT NOT NULL,
+  `cantidad_baja` INT NOT NULL,
+  `motivo` ENUM('Vencimiento', 'Rotura', 'Defecto de Fábrica') NOT NULL,
+  `fecha_registro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`producto_id`) REFERENCES `productos_snack`(`id`)
+) ENGINE=InnoDB;
+
+-- ─────────────────────────────────────────
+-- TABLA: control_alquileres 
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `control_alquileres` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `implemento_id` INT NOT NULL,
+  `usuario_id` INT NOT NULL, -- Cliente que alquila
+  `turno_caja_id` INT NOT NULL, -- Caja activa donde entra el dinero
+  `horas` INT NOT NULL DEFAULT 1,
+  `monto` DECIMAL(8,2) NOT NULL,
+  `estado_fisico_retorno` ENUM('Buen Estado', 'Dañado', 'Extraviado') DEFAULT NULL,
+  `multa` DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+  `estado_alquiler` ENUM('Activo', 'Devuelto') NOT NULL DEFAULT 'Activo',
+  `fecha_salida` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_retorno` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`implemento_id`) REFERENCES `implementos`(`id`),
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`),
+  FOREIGN KEY (`turno_caja_id`) REFERENCES `turnos_caja`(`id`)
+) ENGINE=InnoDB;
