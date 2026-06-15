@@ -65,6 +65,24 @@ switch ($method) {
              JOIN usuarios u ON t.reportado_por=u.id
              WHERE t.id=$id"
         )->fetch();
+
+        // Notificar a todos los administradores sobre la nueva incidencia
+        if ($ticket) {
+            $cancha_nombre = $ticket['cancha_nombre'] ?? 'Cancha';
+            $admins = $pdo->query("SELECT id FROM usuarios WHERE rol='administrador'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($admins as $adminId) {
+                $nStmt = $pdo->prepare(
+                    "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                     VALUES (?, 'nueva_incidencia', ?, ?)"
+                );
+                $nStmt->execute([
+                    $adminId,
+                    "Se ha reportado una nueva incidencia ($tipo) en la cancha $cancha_nombre.",
+                    $id
+                ]);
+            }
+        }
+
         http_response_code(201);
         echo json_encode($ticket);
         break;
@@ -138,6 +156,47 @@ switch ($method) {
              LEFT JOIN usuarios tec ON t.tecnico_id=tec.id
              WHERE t.id=$id"
         )->fetch();
+
+        if ($ticket && $updated) {
+            $cancha_nombre = $updated['cancha_nombre'] ?? 'Cancha';
+            
+            // 1. Notificar al técnico si se le asignó la tarea
+            $tecAsignado = false;
+            if (isset($d['tecnico_id'])) {
+                if (!$ticket['tecnico_id'] || intval($ticket['tecnico_id']) !== intval($d['tecnico_id'])) {
+                    $tecAsignado = true;
+                }
+            }
+            if ($tecAsignado && $updated['tecnico_id']) {
+                $nStmt = $pdo->prepare(
+                    "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                     VALUES (?, 'ticket_asignado', ?, ?)"
+                );
+                $nStmt->execute([
+                    $updated['tecnico_id'],
+                    "Se te ha asignado la tarea de mantenimiento ({$updated['tipo']}) en la cancha $cancha_nombre.",
+                    $id
+                ]);
+            }
+
+            // 2. Notificar a los administradores si la tarea fue completada
+            $completadaNueva = isset($d['estado']) && $d['estado'] === 'Completada' && $ticket['estado'] !== 'Completada';
+            if ($completadaNueva) {
+                $admins = $pdo->query("SELECT id FROM usuarios WHERE rol='administrador'")->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($admins as $adminId) {
+                    $nStmt = $pdo->prepare(
+                        "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                         VALUES (?, 'ticket_completado', ?, ?)"
+                    );
+                    $nStmt->execute([
+                        $adminId,
+                        "La tarea de mantenimiento ({$updated['tipo']}) en la cancha $cancha_nombre ha sido completada.",
+                        $id
+                    ]);
+                }
+            }
+        }
+
         echo json_encode($updated);
         break;
 

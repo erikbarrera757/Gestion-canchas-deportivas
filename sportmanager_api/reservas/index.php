@@ -68,6 +68,38 @@ switch ($method) {
              JOIN usuarios u ON r.usuario_id=u.id
              WHERE r.id=$id"
         )->fetch();
+
+        // Registrar notificaciones para administradores y cliente
+        if ($reserva) {
+            $cancha_nombre = $reserva['cancha_nombre'] ?? 'Cancha';
+            $cliente_nombre = $reserva['cliente_nombre'] ?? 'Cliente';
+            
+            // 1. Notificar a todos los administradores
+            $admins = $pdo->query("SELECT id FROM usuarios WHERE rol='administrador'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($admins as $adminId) {
+                $nStmt = $pdo->prepare(
+                    "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                     VALUES (?, 'nueva_reserva', ?, ?)"
+                );
+                $nStmt->execute([
+                    $adminId,
+                    "Nueva reserva registrada para la cancha $cancha_nombre por $cliente_nombre ($horario el $fecha).",
+                    $id
+                ]);
+            }
+
+            // 2. Notificar al cliente
+            $nStmt = $pdo->prepare(
+                "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                 VALUES (?, 'reserva_confirmada', ?, ?)"
+            );
+            $nStmt->execute([
+                $usuario_id,
+                "Tu reserva para la cancha $cancha_nombre el $fecha ($horario) ha sido confirmada.",
+                $id
+            ]);
+        }
+
         http_response_code(201);
         echo json_encode($reserva);
         break;
@@ -79,7 +111,50 @@ switch ($method) {
         $reserva = $pdo->query("SELECT * FROM reservas WHERE id=$id")->fetch();
         if (!$reserva) { http_response_code(404); echo json_encode(['error'=>'Reserva no encontrada']); break; }
 
+        // Obtener detalles adicionales antes de cancelar para la notificación
+        $reservaDetailed = $pdo->query(
+            "SELECT r.*, c.nombre AS cancha_nombre, u.nombre AS cliente_nombre
+             FROM reservas r
+             JOIN canchas c ON r.cancha_id=c.id
+             JOIN usuarios u ON r.usuario_id=u.id
+             WHERE r.id=$id"
+        )->fetch();
+
         $pdo->prepare("UPDATE reservas SET estado='Cancelada' WHERE id=?")->execute([$id]);
+
+        // Registrar notificaciones de cancelación para administradores y cliente
+        if ($reservaDetailed) {
+            $cancha_nombre  = $reservaDetailed['cancha_nombre'] ?? 'Cancha';
+            $cliente_nombre = $reservaDetailed['cliente_nombre'] ?? 'Cliente';
+            $fecha_resv     = $reservaDetailed['fecha'];
+            $horario_resv   = $reservaDetailed['horario'];
+            $usr_id         = $reservaDetailed['usuario_id'];
+
+            // 1. Notificar a todos los administradores
+            $admins = $pdo->query("SELECT id FROM usuarios WHERE rol='administrador'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($admins as $adminId) {
+                $nStmt = $pdo->prepare(
+                    "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                     VALUES (?, 'reserva_cancelada', ?, ?)"
+                );
+                $nStmt->execute([
+                    $adminId,
+                    "La reserva de $cliente_nombre para la cancha $cancha_nombre el $fecha_resv ($horario_resv) ha sido cancelada.",
+                    $id
+                ]);
+            }
+
+            // 2. Notificar al cliente
+            $nStmt = $pdo->prepare(
+                "INSERT INTO notificaciones (usuario_destino_id, tipo, mensaje, referencia_id)
+                 VALUES (?, 'reserva_cancelada', ?, ?)"
+            );
+            $nStmt->execute([
+                $usr_id,
+                "Tu reserva para la cancha $cancha_nombre el $fecha_resv ($horario_resv) ha sido cancelada.",
+                $id
+            ]);
+        }
         // Liberar la cancha si no tiene otras reservas confirmadas
         $otras = $pdo->prepare(
             "SELECT COUNT(*) as c FROM reservas WHERE cancha_id=? AND estado='Confirmada' AND id!=?"
